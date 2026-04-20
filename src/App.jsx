@@ -173,10 +173,14 @@ export default function App() {
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) fetchProfile(session.user.id);
       else setProfile(null);
+      if (event === "SIGNED_IN" && window.location.hash.includes("access_token")) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setShowAuth(false);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
