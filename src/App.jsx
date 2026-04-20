@@ -9,8 +9,6 @@ const FB = {
   tip:  { label: "Konkrete Tipps", short: "Tipp", color: "#60A5FA", bg: "rgba(96,165,250,0.07)", border: "rgba(96,165,250,0.18)" },
 };
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
-
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
   if (diff < 60) return "gerade eben";
@@ -18,11 +16,7 @@ function timeAgo(ts) {
   if (diff < 86400) return `vor ${Math.floor(diff / 3600)} Std.`;
   return `vor ${Math.floor(diff / 86400)} Tag(en)`;
 }
-
-function initials(name = "") {
-  return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "??";
-}
-
+function initials(name = "") { return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "??"; }
 function hashColor(str = "") {
   const colors = ["#A855F7","#10B981","#3B82F6","#EC4899","#F59E0B","#EF4444","#06B6D4"];
   let h = 0;
@@ -30,27 +24,25 @@ function hashColor(str = "") {
   return colors[h % colors.length];
 }
 
-// ─── UI Components ───────────────────────────────────────────────────────────
+const inputStyle = { width: "100%", background: "#080808", border: "1px solid #222220", borderRadius: 10, padding: "11px 13px", fontFamily: "inherit", fontSize: 14, color: "#F0F0EB", outline: "none", boxSizing: "border-box" };
+const labelStyle = { display: "block", fontSize: 11, fontWeight: 600, color: "#444440", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.08em" };
 
-function Avatar({ name, size = 32 }) {
+function Avatar({ name, size = 32, onClick }) {
   const color = hashColor(name);
   return (
-    <div style={{
+    <div onClick={onClick} style={{
       width: size, height: size, borderRadius: "50%",
       background: color + "1A", border: `1px solid ${color}33`,
       display: "flex", alignItems: "center", justifyContent: "center",
       fontSize: size * 0.34, fontWeight: 600, color, flexShrink: 0,
+      cursor: onClick ? "pointer" : "default",
     }}>{initials(name)}</div>
   );
 }
 
 function CatBadge({ cat }) {
   const c = CAT_COLORS[cat] || "#6B7280";
-  return (
-    <span style={{ background: c + "18", color: c, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 600, border: `1px solid ${c}30`, letterSpacing: "0.02em" }}>
-      {cat}
-    </span>
-  );
+  return <span style={{ background: c + "18", color: c, borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 600, border: `1px solid ${c}30`, letterSpacing: "0.02em" }}>{cat}</span>;
 }
 
 function Spinner() {
@@ -61,8 +53,6 @@ function Spinner() {
     </div>
   );
 }
-
-// ─── Auth Modal ───────────────────────────────────────────────────────────────
 
 function AuthModal({ onClose }) {
   const [mode, setMode] = useState("login");
@@ -84,11 +74,7 @@ function AuthModal({ onClose }) {
         if (error) throw error;
         setSuccess("Bestätigungs-E-Mail gesendet! Bitte dein Postfach checken.");
       }
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { setError(e.message); } finally { setLoading(false); }
   };
 
   return (
@@ -99,22 +85,17 @@ function AuthModal({ onClose }) {
           {mode === "login" ? "Einloggen" : "Registrieren"}
         </div>
         <div style={{ fontSize: 13, color: "#555550", marginBottom: 22 }}>
-          {mode === "login" ? "Noch kein Account?" : "Schon registriert?"}
-          {" "}
+          {mode === "login" ? "Noch kein Account?" : "Schon registriert?"}{" "}
           <span onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }} style={{ color: "#F0C040", cursor: "pointer" }}>
             {mode === "login" ? "Jetzt registrieren" : "Einloggen"}
           </span>
         </div>
-
         <label style={labelStyle}>E-Mail</label>
         <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="deine@email.de" style={inputStyle} onKeyDown={e => e.key === "Enter" && submit()} />
-
         <label style={{ ...labelStyle, marginTop: 12 }}>Passwort</label>
         <input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="Mindestens 6 Zeichen" style={inputStyle} onKeyDown={e => e.key === "Enter" && submit()} />
-
         {error && <div style={{ fontSize: 13, color: "#F87171", marginTop: 12, padding: "8px 12px", background: "rgba(248,113,113,0.08)", borderRadius: 8, border: "1px solid rgba(248,113,113,0.15)" }}>{error}</div>}
         {success && <div style={{ fontSize: 13, color: "#4ADE80", marginTop: 12, padding: "8px 12px", background: "rgba(74,222,128,0.08)", borderRadius: 8, border: "1px solid rgba(74,222,128,0.15)" }}>{success}</div>}
-
         <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "#444440", fontFamily: "inherit", fontSize: 13, cursor: "pointer", padding: "10px 16px" }}>Abbrechen</button>
           <button onClick={submit} disabled={loading} style={{ background: "#F0C040", color: "#080808", border: "none", borderRadius: 9, padding: "11px 24px", fontFamily: "inherit", fontWeight: 600, fontSize: 13, cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1, marginLeft: "auto" }}>
@@ -126,39 +107,104 @@ function AuthModal({ onClose }) {
   );
 }
 
-// ─── Shared Styles ────────────────────────────────────────────────────────────
+function EditProfileModal({ profile, onClose, onSave }) {
+  const [form, setForm] = useState({
+    username: profile?.username || "",
+    bio: profile?.bio || "",
+    age: profile?.age || "",
+    location: profile?.location || "",
+    gender: profile?.gender || "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-const inputStyle = {
-  width: "100%", background: "#080808", border: "1px solid #222220", borderRadius: 10,
-  padding: "11px 13px", fontFamily: "inherit", fontSize: 14, color: "#F0F0EB",
-  outline: "none", boxSizing: "border-box",
-};
-const labelStyle = { display: "block", fontSize: 11, fontWeight: 600, color: "#444440", marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.08em" };
+  const save = async () => {
+    setSaving(true); setError("");
+    const updates = {
+      username: form.username.trim(),
+      bio: form.bio.trim() || null,
+      age: form.age ? parseInt(form.age) : null,
+      location: form.location.trim() || null,
+      gender: form.gender || null,
+    };
+    const { error } = await supabase.from("profiles").update(updates).eq("id", profile.id);
+    setSaving(false);
+    if (error) { setError(error.message); return; }
+    onSave(updates);
+    onClose();
+  };
 
-// ─── Main App ─────────────────────────────────────────────────────────────────
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: 20, overflowY: "auto" }}>
+      <div style={{ background: "#0E0E0E", border: "1px solid #222220", borderRadius: 20, padding: "28px 26px", width: "100%", maxWidth: 460, margin: "auto" }}>
+        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 20, marginBottom: 22 }}>Profil bearbeiten</div>
+
+        <label style={labelStyle}>Name</label>
+        <input value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} placeholder="Dein Name" style={{ ...inputStyle, marginBottom: 14 }} />
+
+        <label style={labelStyle}>Bio</label>
+        <textarea rows={3} value={form.bio} onChange={e => setForm(p => ({ ...p, bio: e.target.value }))} placeholder="Erzähl was über dich..."
+          style={{ ...inputStyle, resize: "none", lineHeight: 1.62, marginBottom: 14 }} />
+
+        <div style={{ display: "flex", gap: 10, marginBottom: 14 }}>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>Alter</label>
+            <input type="number" min="13" max="120" value={form.age} onChange={e => setForm(p => ({ ...p, age: e.target.value }))} placeholder="25" style={inputStyle} />
+          </div>
+          <div style={{ flex: 2 }}>
+            <label style={labelStyle}>Wohnort</label>
+            <input value={form.location} onChange={e => setForm(p => ({ ...p, location: e.target.value }))} placeholder="z.B. Duisburg" style={inputStyle} />
+          </div>
+        </div>
+
+        <label style={labelStyle}>Geschlecht</label>
+        <select value={form.gender} onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}
+          style={{ ...inputStyle, cursor: "pointer", marginBottom: 22 }}>
+          <option value="">Keine Angabe</option>
+          <option value="Männlich">Männlich</option>
+          <option value="Weiblich">Weiblich</option>
+          <option value="Divers">Divers</option>
+        </select>
+
+        {error && <div style={{ fontSize: 13, color: "#F87171", marginBottom: 14, padding: "8px 12px", background: "rgba(248,113,113,0.08)", borderRadius: 8 }}>{error}</div>}
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#444440", fontFamily: "inherit", fontSize: 13, cursor: "pointer", padding: "10px 16px" }}>Abbrechen</button>
+          <button onClick={save} disabled={saving} style={{ background: "#F0C040", color: "#080808", border: "none", borderRadius: 9, padding: "11px 24px", fontFamily: "inherit", fontWeight: 600, fontSize: 13, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1 }}>
+            {saving ? "..." : "Speichern"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
-  const [user, setUser]           = useState(null);
-  const [profile, setProfile]     = useState(null);
-  const [posts, setPosts]         = useState([]);
-  const [feedback, setFeedback]   = useState({});
-  const [view, setView]           = useState("feed");
-  const [activePost, setActive]   = useState(null);
-  const [cat, setCat]             = useState("Alle");
-  const [showCreate, setCreate]   = useState(false);
-  const [showAuth, setShowAuth]   = useState(false);
-  const [showFb, setShowFb]       = useState(false);
-  const [fbType, setFbType]       = useState("good");
-  const [fbText, setFbText]       = useState("");
-  const [newPost, setNewPost]     = useState({ title: "", content: "", category: "Design", tags: "" });
-  const [voted, setVoted]         = useState({});
-  const [loading, setLoading]     = useState(true);
-  const [loadingFb, setLoadingFb] = useState(false);
-  const [hover, setHover]         = useState(null);
-  const [imageFiles, setImageFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
+  const [user, setUser]               = useState(null);
+  const [profile, setProfile]         = useState(null);
+  const [posts, setPosts]             = useState([]);
+  const [feedback, setFeedback]       = useState({});
+  const [view, setView]               = useState("feed");
+  const [activePost, setActive]       = useState(null);
+  const [activeProfile, setActiveProfile] = useState(null);
+  const [profilePosts, setProfilePosts]   = useState([]);
+  const [cat, setCat]                 = useState("Alle");
+  const [showCreate, setCreate]       = useState(false);
+  const [showAuth, setShowAuth]       = useState(false);
+  const [showEditProfile, setEditProfile] = useState(false);
+  const [showFb, setShowFb]           = useState(false);
+  const [fbType, setFbType]           = useState("good");
+  const [fbText, setFbText]           = useState("");
+  const [newPost, setNewPost]         = useState({ title: "", content: "", category: "Design", tags: "" });
+  const [voted, setVoted]             = useState({});
+  const [loading, setLoading]         = useState(true);
+  const [loadingFb, setLoadingFb]     = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [hover, setHover]             = useState(null);
+  const [imageFiles, setImageFiles]   = useState([]);
+  const [uploading, setUploading]     = useState(false);
 
-  // Google Fonts
   useEffect(() => {
     const link = document.createElement("link");
     link.href = "https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap";
@@ -167,7 +213,6 @@ export default function App() {
     return () => document.head.removeChild(link);
   }, []);
 
-  // Auth listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -190,30 +235,30 @@ export default function App() {
     setProfile(data);
   };
 
-  // Fetch posts
+  const openProfile = async (userId) => {
+    setLoadingProfile(true);
+    setView("profile");
+    setActive(null);
+    const { data: profileData } = await supabase.from("profiles").select("*").eq("id", userId).single();
+    setActiveProfile(profileData);
+    const { data: postsData } = await supabase.from("posts").select("*, profiles(username)").eq("author_id", userId).order("created_at", { ascending: false });
+    setProfilePosts(postsData || []);
+    setLoadingProfile(false);
+  };
+
   const fetchPosts = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("posts")
-      .select("*, profiles(username)")
-      .order("created_at", { ascending: false });
+    const { data, error } = await supabase.from("posts").select("*, profiles(username)").order("created_at", { ascending: false });
     if (!error) setPosts(data || []);
     setLoading(false);
   }, []);
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
-  // Fetch feedback for active post
   const fetchFeedback = useCallback(async (postId) => {
     setLoadingFb(true);
-    const { data, error } = await supabase
-      .from("feedback")
-      .select("*, profiles(username)")
-      .eq("post_id", postId)
-      .order("vote_count", { ascending: false });
+    const { data, error } = await supabase.from("feedback").select("*, profiles(username, id)").eq("post_id", postId).order("vote_count", { ascending: false });
     if (!error) setFeedback(prev => ({ ...prev, [postId]: data || [] }));
-
-    // Fetch user's existing votes
     if (user) {
       const { data: voteData } = await supabase.from("votes").select("feedback_id").eq("user_id", user.id);
       if (voteData) {
@@ -225,24 +270,14 @@ export default function App() {
     setLoadingFb(false);
   }, [user]);
 
-  const openPost = (p) => {
-    setActive(p);
-    setView("detail");
-    setShowFb(false);
-    fetchFeedback(p.id);
-  };
+  const openPost = (p) => { setActive(p); setView("detail"); setShowFb(false); fetchFeedback(p.id); };
+  const goToFeed = () => { setView("feed"); setActive(null); setActiveProfile(null); };
 
-  const goBack = () => { setView("feed"); setActive(null); };
-
-  // Submit feedback
   const submitFb = async () => {
     if (!fbText.trim() || !user) return;
     const { data, error } = await supabase.from("feedback").insert({
-      post_id: activePost.id,
-      author_id: user.id,
-      type: fbType,
-      content: fbText.trim(),
-    }).select("*, profiles(username)").single();
+      post_id: activePost.id, author_id: user.id, type: fbType, content: fbText.trim(),
+    }).select("*, profiles(username, id)").single();
     if (!error && data) {
       setFeedback(prev => ({ ...prev, [activePost.id]: [data, ...(prev[activePost.id] || [])] }));
       setPosts(prev => prev.map(p => p.id === activePost.id ? { ...p, feedback_count: p.feedback_count + 1 } : p));
@@ -250,7 +285,6 @@ export default function App() {
     }
   };
 
-  // Vote
   const doVote = async (fbId) => {
     if (!user || voted[fbId]) return;
     setVoted(prev => ({ ...prev, [fbId]: true }));
@@ -262,7 +296,6 @@ export default function App() {
     await supabase.from("votes").insert({ feedback_id: fbId, user_id: user.id });
   };
 
-  // Upload images
   const uploadImages = async (files) => {
     const urls = [];
     for (const file of files) {
@@ -277,22 +310,15 @@ export default function App() {
     return urls;
   };
 
-  // Submit new post
   const submitPost = async () => {
     if (!newPost.title.trim() || !newPost.content.trim() || !user) return;
     setUploading(true);
     let imageUrls = [];
     if (imageFiles.length > 0) imageUrls = await uploadImages(imageFiles);
-
     const { data, error } = await supabase.from("posts").insert({
-      author_id: user.id,
-      title: newPost.title.trim(),
-      content: newPost.content.trim(),
-      category: newPost.category,
-      tags: newPost.tags.split(",").map(t => t.trim()).filter(Boolean),
-      image_urls: imageUrls,
+      author_id: user.id, title: newPost.title.trim(), content: newPost.content.trim(),
+      category: newPost.category, tags: newPost.tags.split(",").map(t => t.trim()).filter(Boolean), image_urls: imageUrls,
     }).select("*, profiles(username)").single();
-
     setUploading(false);
     if (!error && data) {
       setPosts(prev => [data, ...prev]);
@@ -302,7 +328,7 @@ export default function App() {
     }
   };
 
-  const logout = async () => { await supabase.auth.signOut(); };
+  const logout = async () => { await supabase.auth.signOut(); goToFeed(); };
 
   const filtered = cat === "Alle" ? posts : posts.filter(p => p.category === cat);
   const postFb = activePost ? (feedback[activePost.id] || []) : [];
@@ -311,31 +337,30 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: "#080808", fontFamily: "'DM Sans', -apple-system, sans-serif", color: "#F0F0EB" }}>
 
-      {/* ── Header ── */}
       <header style={{ background: "rgba(8,8,8,0.92)", backdropFilter: "blur(16px)", borderBottom: "1px solid #1A1A1A", padding: "0 28px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
-        <div onClick={() => { setView("feed"); setActive(null); }} style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22, letterSpacing: "-0.5px", cursor: "pointer", userSelect: "none" }}>
+        <div onClick={goToFeed} style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22, letterSpacing: "-0.5px", cursor: "pointer", userSelect: "none" }}>
           critico<span style={{ color: "#F0C040" }}>.</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {user ? (
             <>
-              <span style={{ fontSize: 13, color: "#555550" }}>{profile?.username || user.email}</span>
-              <button onClick={logout} style={{ background: "none", border: "1px solid #222220", borderRadius: 8, padding: "6px 14px", fontFamily: "inherit", fontSize: 12, color: "#555550", cursor: "pointer" }}>Logout</button>
               <button onClick={() => setCreate(true)} style={{ background: "#F0C040", color: "#080808", border: "none", borderRadius: 9, padding: "8px 18px", fontFamily: "inherit", fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 17, lineHeight: 1 }}>+</span> Post erstellen
               </button>
+              <div onClick={() => openProfile(user.id)} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "4px 8px", borderRadius: 8, transition: "background 0.12s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#161616"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                <Avatar name={profile?.username || user.email} size={30} />
+              </div>
             </>
           ) : (
-            <button onClick={() => setShowAuth(true)} style={{ background: "#F0C040", color: "#080808", border: "none", borderRadius: 9, padding: "8px 18px", fontFamily: "inherit", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
-              Einloggen
-            </button>
+            <button onClick={() => setShowAuth(true)} style={{ background: "#F0C040", color: "#080808", border: "none", borderRadius: 9, padding: "8px 18px", fontFamily: "inherit", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>Einloggen</button>
           )}
         </div>
       </header>
 
       <main style={{ maxWidth: 700, margin: "0 auto", padding: "28px 20px 60px" }}>
 
-        {/* ── FEED ── */}
         {view === "feed" && (
           <>
             <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4, marginBottom: 24, scrollbarWidth: "none" }}>
@@ -354,8 +379,8 @@ export default function App() {
               <div key={post.id} onClick={() => openPost(post)} onMouseEnter={() => setHover(post.id)} onMouseLeave={() => setHover(null)}
                 style={{ background: hover === post.id ? "#111111" : "#0E0E0E", border: `1px solid ${hover === post.id ? "#282828" : "#1A1A1A"}`, borderRadius: 16, padding: "20px 22px", marginBottom: 10, cursor: "pointer", transition: "all 0.13s" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 13 }}>
-                  <Avatar name={post.profiles?.username || "?"} />
-                  <span style={{ fontSize: 13, fontWeight: 500 }}>{post.profiles?.username || "Anonym"}</span>
+                  <Avatar name={post.profiles?.username || "?"} onClick={e => { e.stopPropagation(); openProfile(post.author_id); }} />
+                  <span onClick={e => { e.stopPropagation(); openProfile(post.author_id); }} style={{ fontSize: 13, fontWeight: 500, cursor: "pointer" }}>{post.profiles?.username || "Anonym"}</span>
                   <CatBadge cat={post.category} />
                   <span style={{ fontSize: 12, color: "#3A3A38", marginLeft: "auto" }}>{timeAgo(post.created_at)}</span>
                 </div>
@@ -382,15 +407,85 @@ export default function App() {
           </>
         )}
 
-        {/* ── DETAIL ── */}
+        {view === "profile" && (
+          <>
+            <button onClick={goToFeed} style={{ background: "none", border: "none", color: "#555550", cursor: "pointer", fontFamily: "inherit", fontSize: 13, display: "flex", alignItems: "center", gap: 5, padding: 0, marginBottom: 22 }}>← Zurück</button>
+
+            {loadingProfile || !activeProfile ? <Spinner /> : (
+              <>
+                <div style={{ background: "#0E0E0E", border: "1px solid #1A1A1A", borderRadius: 18, padding: "28px 26px", marginBottom: 20 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: activeProfile.bio ? 18 : 14 }}>
+                    <Avatar name={activeProfile.username || "?"} size={64} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22, lineHeight: 1.2, marginBottom: 3 }}>{activeProfile.username}</div>
+                      <div style={{ fontSize: 13, color: "#555550" }}>{profilePosts.length} Post{profilePosts.length === 1 ? "" : "s"}</div>
+                    </div>
+                    {user?.id === activeProfile.id && (
+                      <button onClick={() => setEditProfile(true)} style={{ background: "none", border: "1px solid #222220", borderRadius: 8, padding: "7px 14px", fontFamily: "inherit", fontSize: 12, color: "#888880", cursor: "pointer" }}>Bearbeiten</button>
+                    )}
+                  </div>
+
+                  {activeProfile.bio && (
+                    <div style={{ fontSize: 14, lineHeight: 1.62, color: "#999990", marginBottom: 16, paddingBottom: 16, borderBottom: "1px solid #1A1A1A" }}>{activeProfile.bio}</div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 24, flexWrap: "wrap", fontSize: 13 }}>
+                    {activeProfile.age && (
+                      <div>
+                        <div style={{ fontSize: 11, color: "#444440", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Alter</div>
+                        <div style={{ color: "#C8C8C4" }}>{activeProfile.age}</div>
+                      </div>
+                    )}
+                    {activeProfile.location && (
+                      <div>
+                        <div style={{ fontSize: 11, color: "#444440", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Wohnort</div>
+                        <div style={{ color: "#C8C8C4" }}>{activeProfile.location}</div>
+                      </div>
+                    )}
+                    {activeProfile.gender && (
+                      <div>
+                        <div style={{ fontSize: 11, color: "#444440", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>Geschlecht</div>
+                        <div style={{ color: "#C8C8C4" }}>{activeProfile.gender}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {user?.id === activeProfile.id && (
+                    <button onClick={logout} style={{ background: "none", border: "1px solid #222220", borderRadius: 8, padding: "8px 16px", fontFamily: "inherit", fontSize: 12, color: "#666660", cursor: "pointer", marginTop: 18 }}>Logout</button>
+                  )}
+                </div>
+
+                <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: "#666660", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 12 }}>Posts</div>
+
+                {profilePosts.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px 0", color: "#333330", fontSize: 13 }}>Noch keine Posts.</div>
+                ) : profilePosts.map(post => (
+                  <div key={post.id} onClick={() => openPost(post)}
+                    style={{ background: "#0E0E0E", border: "1px solid #1A1A1A", borderRadius: 14, padding: "16px 18px", marginBottom: 8, cursor: "pointer", transition: "all 0.13s" }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#282828"; e.currentTarget.style.background = "#111"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#1A1A1A"; e.currentTarget.style.background = "#0E0E0E"; }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 9 }}>
+                      <CatBadge cat={post.category} />
+                      <span style={{ fontSize: 12, color: "#3A3A38", marginLeft: "auto" }}>{timeAgo(post.created_at)}</span>
+                    </div>
+                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 15, lineHeight: 1.38, marginBottom: 6 }}>{post.title}</div>
+                    <div style={{ fontSize: 13, color: "#666660", marginBottom: 10, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical" }}>{post.content}</div>
+                    <div style={{ fontSize: 12, color: "#3A3A38" }}>{post.feedback_count} Feedback{post.feedback_count === 1 ? "" : "s"}</div>
+                  </div>
+                ))}
+              </>
+            )}
+          </>
+        )}
+
         {view === "detail" && activePost && (
           <>
-            <button onClick={goBack} style={{ background: "none", border: "none", color: "#555550", cursor: "pointer", fontFamily: "inherit", fontSize: 13, display: "flex", alignItems: "center", gap: 5, padding: 0, marginBottom: 22 }}>← Zurück</button>
+            <button onClick={goToFeed} style={{ background: "none", border: "none", color: "#555550", cursor: "pointer", fontFamily: "inherit", fontSize: 13, display: "flex", alignItems: "center", gap: 5, padding: 0, marginBottom: 22 }}>← Zurück</button>
 
             <div style={{ background: "#0E0E0E", border: "1px solid #1A1A1A", borderRadius: 18, padding: "24px 26px", marginBottom: 20 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 14 }}>
-                <Avatar name={activePost.profiles?.username || "?"} />
-                <span style={{ fontSize: 13, fontWeight: 500 }}>{activePost.profiles?.username || "Anonym"}</span>
+                <Avatar name={activePost.profiles?.username || "?"} onClick={() => openProfile(activePost.author_id)} />
+                <span onClick={() => openProfile(activePost.author_id)} style={{ fontSize: 13, fontWeight: 500, cursor: "pointer" }}>{activePost.profiles?.username || "Anonym"}</span>
                 <CatBadge cat={activePost.category} />
                 <span style={{ fontSize: 12, color: "#3A3A38", marginLeft: "auto" }}>{timeAgo(activePost.created_at)}</span>
               </div>
@@ -410,7 +505,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Stats */}
             <div style={{ display: "flex", gap: 8, marginBottom: 26 }}>
               {Object.entries(FB).map(([type, cfg]) => (
                 <div key={type} style={{ flex: 1, background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 12, padding: "12px 10px", textAlign: "center" }}>
@@ -436,8 +530,8 @@ export default function App() {
                         <div key={fb.id} style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 13, padding: "14px 16px", marginBottom: 8, display: "flex", gap: 12, alignItems: "flex-start" }}>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
-                              <Avatar name={fb.profiles?.username || "?"} size={26} />
-                              <span style={{ fontSize: 12, fontWeight: 500, color: "#555550" }}>{fb.profiles?.username || "Anonym"}</span>
+                              <Avatar name={fb.profiles?.username || "?"} size={26} onClick={() => openProfile(fb.author_id)} />
+                              <span onClick={() => openProfile(fb.author_id)} style={{ fontSize: 12, fontWeight: 500, color: "#555550", cursor: "pointer" }}>{fb.profiles?.username || "Anonym"}</span>
                             </div>
                             <div style={{ fontSize: 14, lineHeight: 1.62, color: "#C8C8C4" }}>{fb.content}</div>
                           </div>
@@ -453,7 +547,6 @@ export default function App() {
               </>
             )}
 
-            {/* Add Feedback */}
             {user ? showFb ? (
               <div style={{ background: "#0E0E0E", border: "1px solid #1A1A1A", borderRadius: 16, padding: "20px 22px", marginTop: 4 }}>
                 <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Feedback hinterlassen</div>
@@ -486,7 +579,6 @@ export default function App() {
         )}
       </main>
 
-      {/* ── CREATE MODAL ── */}
       {showCreate && (
         <div onClick={e => { if (e.target === e.currentTarget) setCreate(false); }}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20, overflowY: "auto" }}>
@@ -532,6 +624,16 @@ export default function App() {
       )}
 
       {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {showEditProfile && profile && (
+        <EditProfileModal
+          profile={profile}
+          onClose={() => setEditProfile(false)}
+          onSave={updates => {
+            setProfile(p => ({ ...p, ...updates }));
+            setActiveProfile(p => ({ ...p, ...updates }));
+          }}
+        />
+      )}
     </div>
   );
 }
