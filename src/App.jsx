@@ -148,20 +148,32 @@ function AuthModal({ onClose }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const submit = async () => {
-    setError(''); setSuccess(''); setLoading(true);
-    try {
-      if (mode==='login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        onClose();
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        setSuccess('Bestätigungs-E-Mail gesendet!');
-      }
-    } catch(e) { setError(e.message); } finally { setLoading(false); }
-  };
+  const submitFb = async () => {
+  if (!fbText.trim()||!user) return;
+  const { error } = await supabase.from('feedback').insert({ 
+    post_id: activePost.id, 
+    author_id: user.id, 
+    type: fbType, 
+    content: fbText.trim() 
+  });
+  if (!error) {
+    const newFb = {
+      id: Date.now(),
+      post_id: activePost.id,
+      author_id: user.id,
+      type: fbType,
+      content: fbText.trim(),
+      vote_count: 0,
+      profiles: { username: profile?.username || 'Du' }
+    };
+    setFeedback(prev => ({ ...prev, [activePost.id]: [newFb, ...(prev[activePost.id]||[])] }));
+    setPosts(prev => prev.map(p => p.id===activePost.id ? {...p, feedback_count: p.feedback_count+1} : p));
+    setFbText(''); 
+    setShowFbForm(false);
+  } else {
+    alert('Fehler: ' + error.message);
+  }
+};
 
   return (
     <div className="modal-enter" onClick={e=>{if(e.target===e.currentTarget)onClose();}} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:300, padding:20 }}>
